@@ -6,6 +6,7 @@
 set -uo pipefail
 IFS=$' \t\n'
 export LC_ALL=C
+# shellcheck source=SCRIPTDIR/lib.bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.bash"
 
 rg_test_begin test_proc
@@ -40,6 +41,7 @@ assert_eq '8' "$(printf '%s\n' "$snap" | grep -c .)" 'snapshot emits one row per
 # 5001's true start-epoch token is 1783011491 (computed above). Compute it via the
 # SUT itself so the "pass" case is not hand-mirrored.
 _rg_lstart_to_epoch epoch_5001 Jul 2 16:58:11 2026
+# shellcheck disable=SC2154  # epoch_5001 assigned via nameref out-param above
 rg_proc_alive 5001 502 "$epoch_5001"
 assert_true $? 'proc_alive PASSES on pid+uid+start match'
 
@@ -65,7 +67,8 @@ assert_eq '1610612736' "$(rg_footprint 5002)" 'rg_footprint reads Physical footp
 # The vmmap region table is NOT pre-sorted and region names contain spaces, so
 # RESIDENT is located relative to the rightmost pure-integer (REGION COUNT). The
 # heaviest region in the fixture is VM_ALLOCATE @ 900M resident = 943718400 bytes.
-export RG_GAWK="$(command -v gawk)"
+RG_GAWK="$(command -v gawk)"
+export RG_GAWK
 dom="$(rg_dominant_region 5002)"
 assert_eq $'VM_ALLOCATE\t943718400' "$dom" 'rg_dominant_region picks heaviest region, resident in bytes'
 

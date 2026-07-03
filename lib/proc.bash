@@ -135,6 +135,7 @@ rg_footprint() {
 rg_dominant_region() {
   local pid="${1:?usage: rg_dominant_region <pid>}"
   [[ -n ${RG_GAWK:-} ]] || return 0
+  # shellcheck disable=SC2016  # awk program, single quotes intentional
   "$RG_VMMAP" --summary "$pid" 2> /dev/null |
     "$RG_GAWK" '
         function tobytes(s,   v,u){
@@ -209,6 +210,7 @@ rg_pid_regions() {
     printf '  (vmmap region table needs gawk)\n'
     return 0
   fi
+  # shellcheck disable=SC2016  # awk program, single quotes intentional
   "$RG_VMMAP" --summary "$pid" 2> /dev/null |
     "$RG_GAWK" '
         /REGION TYPE/ {hdr=1}

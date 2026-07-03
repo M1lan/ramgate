@@ -147,6 +147,7 @@ _rg_conf_validate() {
   local key="$1" val="$2"
   # Universally forbidden in ANY value: command substitution, parameter
   # expansion, statement separators, redirection, control/newline chars.
+  # shellcheck disable=SC2016  # literal patterns -- non-expansion is the point
   case "$val" in
     *'$('* | *'`'* | *'${'* | *';'* | *'&'* | *'<'* | *'>'* | *$'\n'* | *$'\r'*)
       return 1

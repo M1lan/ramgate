@@ -8,9 +8,11 @@
 #   * guard_build_protect_set COVERS the guard's own basename + terminal/shell
 #   * KILL_BUDGET caps kills per CRIT episode
 #   * the pre-signal rg_proc_alive revalidation ABORTS on a recycled pid
+# shellcheck disable=SC2034  # config globals here are consumed by the sourced SUT
 set -uo pipefail
 IFS=$' \t\n'
 export LC_ALL=C
+# shellcheck source=SCRIPTDIR/lib.bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.bash"
 
 rg_test_begin test_breaker

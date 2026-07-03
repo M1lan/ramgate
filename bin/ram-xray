@@ -194,6 +194,7 @@ xray_why() {
       "$RG_C_CYA" "${comm##*/}" "$RG_C_RESET" "$pid" \
       "$RG_C_DIM" "${dom:-<vmmap needs sudo>}" "$RG_C_RESET"
   done < <(rg_top_pids 3)
+  # shellcheck disable=SC2016  # backticks are literal markdown-style quoting
   printf '  %s(run `ram-xray pid <pid>` for any process full region map)%s\n' "$RG_C_DIM" "$RG_C_RESET"
 }
 

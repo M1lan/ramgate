@@ -42,8 +42,10 @@ declare -gi RG_T_NUM=0 RG_T_PASS=0 RG_T_FAIL=0
 declare -g RG_T_NAME=''
 
 # rg_src <name> -- source a shared lib (config|sample|proc|fmt).
+# shellcheck disable=SC1090  # dynamic by design; SUT picked per test
 rg_src() { source "$RG_LIB/$1.bash"; }
 # rg_src_guard <name> -- source a private guard lib (log|ledger|breaker|agent).
+# shellcheck disable=SC1090  # dynamic by design; SUT picked per test
 rg_src_guard() { source "$RG_LIB/guard/$1.bash"; }
 
 rg_test_begin() {

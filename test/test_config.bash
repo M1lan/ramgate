@@ -3,9 +3,11 @@
 # and the SECURITY-CRITICAL rg_parse_conf: it must NEVER execute conf contents,
 # must reject shell-metachar / command-substitution / unknown-key values, and
 # must REFUSE a group/world-writable or wrong-owner file (it steers a killer).
+# shellcheck disable=SC2016  # single-quoted $(...)/${...} literals ARE the attack payloads
 set -uo pipefail
 IFS=$' \t\n'
 export LC_ALL=C
+# shellcheck source=SCRIPTDIR/lib.bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.bash"
 
 rg_test_begin test_config
@@ -76,7 +78,7 @@ assert_contains "$(< "$scratch/evil.err")" 'unknown config key: FOO_UNKNOWN' 'un
 
 ## --- individual malicious values, per _rg_conf_validate --------------------
 one_conf() {
-  local body="$1" key="$2"
+  local body="$1" # 2nd arg (key) is call-site documentation only
   printf '%s\n' "$body" > "$scratch/one.conf"
   chmod 600 "$scratch/one.conf"
   rg_parse_conf "$scratch/one.conf" 2> /dev/null

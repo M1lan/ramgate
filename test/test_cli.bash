@@ -10,6 +10,7 @@
 set -uo pipefail
 IFS=$' \t\n'
 export LC_ALL=C
+# shellcheck source=SCRIPTDIR/lib.bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.bash"
 
 rg_test_begin test_cli
