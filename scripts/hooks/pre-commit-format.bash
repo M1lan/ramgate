@@ -15,6 +15,11 @@ hook::trap_interrupts
 
 (($# == 0)) && exit 0
 
+# Scratch under $TMPDIR (default ~/tmp), never /tmp -- keep all temp files in $HOME.
+: "${TMPDIR:=$HOME/tmp}"
+mkdir -p "$TMPDIR" 2> /dev/null || true
+shfmt_log="${TMPDIR%/}/shfmt.$$"
+
 sh=()
 md=()
 for f in "$@"; do
@@ -39,7 +44,7 @@ restage() { for f in "$@"; do git add -- "$f" && changed+=("$f"); done; }
 sh_unfixed=0
 if ((${#sh[@]})) && command -v shfmt > /dev/null 2>&1; then
   before="$(md5sum "${sh[@]}" 2> /dev/null || true)"
-  shfmt -w -i 2 -ci -sr "${sh[@]}" > /tmp/shfmt.$$ 2>&1 || sh_unfixed=1
+  shfmt -w -i 2 -ci -sr "${sh[@]}" > "$shfmt_log" 2>&1 || sh_unfixed=1
   after="$(md5sum "${sh[@]}" 2> /dev/null || true)"
   [[ "$before" != "$after" ]] && restage "${sh[@]}"
 fi
@@ -60,8 +65,8 @@ fi
 # --- remaining, non-auto-fixable shfmt problems (e.g. parse errors) ---------
 if ((sh_unfixed)); then
   hook::warn "shfmt reported issues it could not auto-fix:"
-  sed -n '1,20p' /tmp/shfmt.$$ 2> /dev/null || true
-  rm -f /tmp/shfmt.$$
+  sed -n '1,20p' "$shfmt_log" 2> /dev/null || true
+  rm -f "$shfmt_log"
 
   # Optional, opt-in, never-auto-firing AI triage of the leftovers.
   if hook::interactive && hook::ai_available; then
@@ -76,5 +81,5 @@ if ((sh_unfixed)); then
   fi
   # Style issues never hard-block the commit; format fixes are already staged.
 fi
-rm -f /tmp/shfmt.$$ 2> /dev/null || true
+rm -f "$shfmt_log" 2> /dev/null || true
 exit 0
