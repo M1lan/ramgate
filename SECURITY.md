@@ -52,11 +52,7 @@ paused or killed** -- i.e. steering the circuit breaker. The main vectors:
 
 ## Reporting a vulnerability
 
-Please report suspected vulnerabilities **privately** to:
-
-<security@ramgate.invalid>
-
+Report privately via GitHub Security Advisories (repository Security tab).
 Include a description, affected version (`ram-xray --version` / `ram-guard
---version`), macOS version, and a minimal reproduction if possible. Please do not
-open a public issue for an unfixed vulnerability. You will get an acknowledgement,
-and a coordinated disclosure once a fix is available.
+--version`), macOS version, and a minimal reproduction if possible. Do not
+open a public issue for an unfixed vulnerability.

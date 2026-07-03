@@ -178,4 +178,4 @@ parameter expansion over external commands, `set -uo pipefail` (never bare `set 
 
 ## License
 
-AGPL-3.0-or-later © 2026 the ramgate authors. See [LICENSE](LICENSE).
+AGPL-3.0-or-later © 2026 m1lan. See [LICENSE](LICENSE).
