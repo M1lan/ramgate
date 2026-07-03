@@ -1,0 +1,235 @@
+#!/usr/bin/env bash
+# ram-guard -- proactive RAM circuit breaker for macOS (the ACTING half).
+#
+# Polls the kernel's memory-pressure signals and per-process RSS growth, then:
+#   WARN     -> SIGSTOP the fastest-growing hog (pause: recoverable, non-lethal).
+#   CRITICAL -> SIGKILL it (reclaim RAM before the system stalls).
+# Paused victims are persisted to an on-disk ledger and SIGCONTed when pressure
+# clears OR on the next daemon start (so a crash never leaves an app frozen).
+# Every signal is gated by a pid+uid+start-time revalidation to defeat PID
+# recycling, and a per-episode KILL_BUDGET caps the damage of a runaway loop.
+# Signals target only the current user's processes -- no root needed.
+#
+# This is the ONLY binary that can pause or kill. The introspection half is a
+# separate, provably-inert binary: ram-xray. macOS-only. Pure GNU Bash >= 5.3.15.
+
+# SC2034: config/flag vars set here (RG_VERBOSE, and the aggressive test-mode
+# WARN_STREAK/COOLDOWN/... assignments) are consumed by the dynamically-sourced
+# lib/**.bash (breaker/severity/config); shellcheck cannot follow the runtime
+# `source` loop, so it reports them unused.
+# shellcheck disable=SC2034
+
+# Launcher / version handoff: re-exec under a modern GNU bash if the interpreter
+# running us is older than 5.3 (macOS ships /bin/bash 3.2). Pure check-and-exec;
+# patch level >= .15 is enforced later in lib/config.bash::rg_require_bash.
+if [ -z "${BASH_VERSINFO+set}" ] ||
+  ! ((BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 3))); then
+  for _b in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+    [ -x "$_b" ] && exec "$_b" "$0" "$@"
+  done
+  echo >&2 'error: ramgate requires GNU bash >= 5.3.15 (none found under /opt/homebrew or /usr/local)'
+  exit 78
+fi
+set -uo pipefail
+IFS=$' \t\n'
+export LC_ALL=C
+
+readonly RG_VERSION='0.1.0'
+readonly LABEL='com.milansantosi.ramgate'
+
+_self="${BASH_SOURCE[0]}"
+while [[ -L $_self ]]; do
+  _dir="$(cd -P "$(dirname "$_self")" && pwd)"
+  _self="$(readlink "$_self")"
+  [[ $_self != /* ]] && _self="$_dir/$_self"
+done
+RG_BIN_DIR="$(cd -P "$(dirname "$_self")" && pwd)"
+readonly RG_BIN_DIR
+readonly RG_LIB_DIR="${RG_BIN_DIR%/bin}/lib"
+readonly SCRIPT_PATH="$RG_BIN_DIR/ram-guard"
+unset _self _dir
+
+# Pure shared libs first, then the PRIVATE guard modules (only ram-guard loads
+# these; ram-xray must never).
+for _m in config sample proc fmt; do
+  # shellcheck source=/dev/null
+  source "$RG_LIB_DIR/$_m.bash" || {
+    printf >&2 'error: cannot load lib/%s.bash\n' "$_m"
+    exit 78
+  }
+done
+for _m in log ledger breaker agent; do
+  # shellcheck source=/dev/null
+  source "$RG_LIB_DIR/guard/$_m.bash" || {
+    printf >&2 'error: cannot load lib/guard/%s.bash\n' "$_m"
+    exit 78
+  }
+done
+unset _m
+
+rg_require_bash
+
+## Config: defaults -> conf file (whitelist parse, never source) -> env.
+## CLI flags applied last in rg_main. See lib/config.bash.
+CONF="${RG_CONF:-$HOME/.config/ramgate.conf}"
+rg_load_config "$CONF"
+
+# Runtime-derived self/terminal protect set (never a stale hardcoded name).
+guard_build_protect_set "${SCRIPT_PATH##*/}" "$LABEL" "$$"
+
+## Subcommands ----------------------------------------------------------------
+
+guard_run() {
+  guard_ledger_resume # un-pause anything a previous instance left frozen
+  guard_log "event=start pid=$$ dry_run=$DRY_RUN interval=${POLL_INTERVAL}s" \
+    "warn_pct=$WARN_PCT crit_pct=$CRIT_PCT kill_budget=$KILL_BUDGET crit_signal=$CRIT_SIGNAL"
+  trap 'guard_log "event=stop pid=$$"; exit 0' INT TERM
+  while true; do
+    guard_tick
+    "$RG_SLEEP" "$POLL_INTERVAL"
+  done
+}
+
+guard_once_cmd() {
+  # A single unprimed tick has no growth history and would fall through to
+  # "kill the biggest" with no evidence -- so `once` is DRY_RUN-forced.
+  DRY_RUN=1
+  guard_log "event=once (DRY_RUN forced: one-shot cannot prove growth, never signals)"
+  guard_tick
+}
+
+guard_test_cmd() {
+  guard_log "event=test-mode (DRY_RUN forced, aggressive thresholds, no signals sent)"
+  DRY_RUN=1 WARN_PCT=100 CRIT_PCT=0 WARN_STREAK=1 COOLDOWN=0
+  guard_run
+}
+
+guard_status_cmd() {
+  local lvl freep swap sev
+  rg_sample_vm
+  lvl="$(rg_pressure_level)"
+  freep="$(rg_free_pct)"
+  read -r swap _ < <(rg_swap) # rg_swap echoes "used total"; keep used
+  swap=$((swap / 1048576))
+  sev="$(guard_severity "$lvl" "$freep")"
+  printf 'ram-guard -- status\n'
+  printf '  pressure level : %s  (1=normal 2=warn 4=critical)\n' "$lvl"
+  printf '  free memory    : %s%%  (WARN<=%s  CRIT<=%s)\n' "$freep" "$WARN_PCT" "$CRIT_PCT"
+  printf '  swap used      : %s MB\n' "$swap"
+  printf '  current state  : %s\n' "$sev"
+  guard_pick_target 1
+  if [[ -n ${TARGET_PID:-} ]]; then
+    printf '  would target   : pid=%s rss=%sMB reason=%s comm=%s\n' \
+      "$TARGET_PID" "$((TARGET_RSS_KB / 1024))" "$TARGET_REASON" "${TARGET_COMM##*/}"
+  else
+    printf '  would target   : (none above %sMB)\n' "$MIN_RSS_MB"
+  fi
+  if "$RG_LAUNCHCTL" print "gui/$(id -u)/$LABEL" > /dev/null 2>&1; then
+    printf '  LaunchAgent    : loaded\n'
+  else
+    printf '  LaunchAgent    : not loaded\n'
+  fi
+  printf '  log file       : %s\n' "$LOG_FILE"
+  printf '  paused (ledger): %s\n' "$(guard_ledger_count)"
+}
+
+guard_log_cmd() {
+  : > /dev/null
+  [[ -f $LOG_FILE ]] || : > "$LOG_FILE"
+  exec tail -n 50 -f "$LOG_FILE"
+}
+
+guard_version() { printf 'ram-guard (ramgate) %s\n' "$RG_VERSION"; }
+
+guard_usage() {
+  cat << EOF
+ram-guard -- proactive RAM circuit breaker for macOS (the ACTING half).
+
+Polls kernel memory-pressure + per-process RSS growth, then:
+  WARN     -> SIGSTOP the fastest-growing hog (pause, fully recoverable).
+  CRITICAL -> SIGKILL it (reclaim RAM before the system stalls).
+Paused processes are SIGCONTed when pressure clears or on the next start.
+Signals target only the current user (no root). Every signal is pid-revalidated.
+
+Usage: ram-guard [global-opts] <command>
+
+Commands:
+  run            loop forever (what the LaunchAgent calls)
+  once           evaluate once (DRY_RUN-forced: never signals)
+  status         one-shot reading + the target it would pick now
+  test           loop with aggressive thresholds + DRY_RUN (no signals sent)
+  install        write + load the per-user LaunchAgent
+  uninstall      unload + remove the LaunchAgent
+  log            tail the log file
+  doctor         preflight: bash patch level, required macOS tools, OS build
+
+Global options:
+  --dry-run      log intended actions, send NO signals
+  --verbose      extra diagnostics to stderr
+  --config FILE  use FILE instead of \$HOME/.config/ramgate.conf
+  -h, --help     show this help
+  -V, --version  show version
+
+Config precedence: CLI flag > environment > config file > built-in default.
+The config file is parsed as a KEY=VALUE whitelist (never sourced) and is
+refused if it is not owned by you or is group/world-writable.
+  $CONF
+EOF
+}
+
+## Dispatch -------------------------------------------------------------------
+
+rg_main() {
+  local -a rest=()
+  while (($#)); do
+    case "$1" in
+      --dry-run) DRY_RUN=1 ;;
+      --verbose) RG_VERBOSE=1 ;;
+      --config)
+        shift
+        CONF="${1:?--config needs a path}"
+        rg_load_config "$CONF"
+        ;;
+      -V | --version)
+        guard_version
+        return 0
+        ;;
+      -h | --help)
+        guard_usage
+        return 0
+        ;;
+      --)
+        shift
+        rest+=("$@")
+        break
+        ;;
+      -*)
+        printf >&2 'unknown option: %s\n' "$1"
+        guard_usage >&2
+        return 2
+        ;;
+      *) rest+=("$1") ;;
+    esac
+    shift
+  done
+
+  local cmd="${rest[0]:-status}"
+  case "$cmd" in
+    run) guard_run ;;
+    once) guard_once_cmd ;;
+    status) guard_status_cmd ;;
+    test) guard_test_cmd ;;
+    install) guard_install "$SCRIPT_PATH" "$LABEL" ;;
+    uninstall) guard_uninstall "$LABEL" ;;
+    log) guard_log_cmd ;;
+    doctor) rg_doctor guard ;;
+    help | -h | --help) guard_usage ;;
+    *)
+      printf >&2 'unknown command: %s\n' "$cmd"
+      guard_usage >&2
+      return 2
+      ;;
+  esac
+}
+
+[[ ${BASH_SOURCE[0]} == "${0}" ]] && rg_main "$@"

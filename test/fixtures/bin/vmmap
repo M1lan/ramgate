@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# fixtures/bin/vmmap -- fake `vmmap --summary <pid>`. Prints $FAKE_VMMAP_FILE
+# (default: fixtures/vmmap_summary.txt) regardless of pid. Read-only.
+set -uo pipefail
+IFS=$' \t\n'
+export LC_ALL=C
+
+f="${FAKE_VMMAP_FILE:-${RG_FIX:?RG_FIX unset}/vmmap_summary.txt}"
+[[ -f $f ]] || exit 1
+printf '%s\n' "$(<"$f")"
+exit 0

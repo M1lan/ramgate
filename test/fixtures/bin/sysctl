@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# fixtures/bin/sysctl -- fake `sysctl -n <name>`. Resolves <name> to
+# $FAKE_SYSCTL_DIR/<name>.txt and prints its contents. Missing key -> exit 1
+# (so rg_sysctl_n falls back to its default, exactly like the real tool).
+set -uo pipefail
+IFS=$' \t\n'
+export LC_ALL=C
+
+dir="${FAKE_SYSCTL_DIR:-${RG_FIX:?RG_FIX unset}/sysctl}"
+name=''
+while (($#)); do
+  case "$1" in
+    -n) shift; name="${1:-}" ;;
+    *) [[ -z $name ]] && name="$1" ;;
+  esac
+  shift
+done
+f="$dir/$name.txt"
+[[ -f $f ]] || exit 1
+printf '%s\n' "$(<"$f")"
+exit 0

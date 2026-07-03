@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# fixtures/bin/ps -- deterministic fake `ps` for ramgate tests.
+# Serves rows out of $FAKE_PS_DB (default: fixtures/ps.txt), honouring the exact
+# ps(1) invocations ramgate makes:
+#   -axo pid=,rss=,uid=,lstart=,comm=   (rg_ps_snapshot: full roster)
+#   -o uid=,lstart= -p <pid>            (rg_proc_alive: recycle gate)
+#   -o pgid= -p <pid>                   (guard process-group protection)
+#   -p <pid> -o pid=                    (rg_pid_exists)
+#   -p <pid> -o comm=                   (rg_pid_comm)
+#   -p <pid> -o rss=,vsz=,pmem=         (rg_pid_ps_line)
+# Reads NOTHING from the real host and signals nothing. Exits 1 when a -p target
+# is not present (mirrors real ps), so existence checks behave correctly.
+set -uo pipefail
+IFS=$' \t\n'
+export LC_ALL=C
+
+db="${FAKE_PS_DB:-${RG_FIX:?RG_FIX unset}/ps.txt}"
+[[ -f $db ]] || { printf 'fake-ps: missing db %s\n' "$db" >&2; exit 2; }
+
+spec='' target=''
+while (($#)); do
+  case "$1" in
+    -o | -axo) shift; spec="${1:-}" ;;
+    -p) shift; target="${1:-}" ;;
+    -*) : ;; # ignore bare flag bundles (-ax etc.)
+    *) : ;;
+  esac
+  shift
+done
+[[ -n $spec ]] || spec='pid='
+
+local_cols=()
+IFS=',' read -ra local_cols <<< "$spec"
+declare -a cols=()
+for c in "${local_cols[@]}"; do cols+=("${c%=}"); done
+
+emitted=0
+while IFS=$'\t' read -r f_pid f_rss f_uid f_pgid f_vsz f_pmem f_lstart f_comm; do
+  [[ -n $f_pid ]] || continue
+  [[ $f_pid == '#'* ]] && continue
+  [[ -n $target && $f_pid != "$target" ]] && continue
+  out=''
+  for c in "${cols[@]}"; do
+    case "$c" in
+      pid) v="$f_pid" ;;
+      rss) v="$f_rss" ;;
+      uid) v="$f_uid" ;;
+      pgid) v="$f_pgid" ;;
+      vsz) v="$f_vsz" ;;
+      pmem) v="$f_pmem" ;;
+      lstart) v="$f_lstart" ;;
+      comm | command) v="$f_comm" ;;
+      *) v='0' ;;
+    esac
+    out+="${out:+ }$v"
+  done
+  printf '%s\n' "$out"
+  emitted=1
+done < "$db"
+
+[[ -n $target && $emitted -eq 0 ]] && exit 1
+exit 0

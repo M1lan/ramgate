@@ -1,0 +1,302 @@
+#!/usr/bin/env bash
+# ram-xray -- read-only RAM introspection for macOS: what is resident, and WHY.
+#
+# The INERT half of ramgate. This binary sends NO signals, mutates NO state,
+# and by construction NEVER sources anything under lib/guard/. Safe to run at
+# any pressure level, including mid-OOM, to understand an episode. The ACTING
+# half is a separate binary, ram-guard, which is the only thing that can pause
+# or kill a process. Physical separation is the whole safety story.
+#
+# macOS-only by design (Darwin syscalls). Pure GNU Bash >= 5.3.15.
+
+# SC2034: flag vars set here (RG_NO_COLOR/RG_JSON/RG_TSV) are consumed by the
+# dynamically-sourced lib/*.bash (rg_init_colors etc.); shellcheck cannot follow
+# the runtime `source "$RG_LIB_DIR/$_m.bash"` loop, so it reports them unused.
+# shellcheck disable=SC2034
+
+# Launcher / version handoff: re-exec under a modern GNU bash if the interpreter
+# running us is older than 5.3 (macOS ships /bin/bash 3.2). Pure check-and-exec,
+# no logic runs on the old shell; patch level >= .15 is enforced later in
+# lib/config.bash::rg_require_bash once we are certainly on 5.3+.
+if [ -z "${BASH_VERSINFO+set}" ] ||
+  ! ((BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 3))); then
+  for _b in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+    [ -x "$_b" ] && exec "$_b" "$0" "$@"
+  done
+  echo >&2 'error: ramgate requires GNU bash >= 5.3.15 (none found under /opt/homebrew or /usr/local)'
+  exit 78 # EX_CONFIG
+fi
+set -uo pipefail
+IFS=$' \t\n'
+export LC_ALL=C
+
+readonly RG_VERSION='0.1.0'
+readonly TOP_N_DEFAULT=12
+
+# Absolute lib dir, resolved from this script's real location.
+_self="${BASH_SOURCE[0]}"
+while [[ -L $_self ]]; do
+  _dir="$(cd -P "$(dirname "$_self")" && pwd)"
+  _self="$(readlink "$_self")"
+  [[ $_self != /* ]] && _self="$_dir/$_self"
+done
+RG_BIN_DIR="$(cd -P "$(dirname "$_self")" && pwd)"
+readonly RG_BIN_DIR
+readonly RG_LIB_DIR="${RG_BIN_DIR%/bin}/lib"
+unset _self _dir
+
+# INERT GUARANTEE: this binary loads only the four PURE, shared libraries. It
+# must never source lib/guard/*. A CI test asserts `ram-guard` symbols are
+# absent from this process.
+for _m in config sample proc fmt; do
+  # shellcheck source=/dev/null
+  if ! source "$RG_LIB_DIR/$_m.bash"; then
+    printf >&2 'error: cannot load lib/%s.bash (broken install?)\n' "$_m"
+    exit 78
+  fi
+done
+unset _m
+
+rg_require_bash # patch-level guard (>= 5.3.15), defined in lib/config.bash
+
+## Read-only commands ---------------------------------------------------------
+
+# summary: system breakdown + pressure + compressor + top hogs (default).
+xray_summary() {
+  rg_sample_vm
+  rg_breakdown
+
+  if [[ -n ${RG_JSON:-} ]]; then
+    rg_emit_json_summary
+    return
+  fi
+  if [[ -n ${RG_TSV:-} ]]; then
+    rg_emit_tsv_summary
+    return
+  fi
+
+  local lvl freep lvl_name lvl_col
+  lvl="$(rg_pressure_level)"
+  freep="$(rg_free_pct)"
+  case "$lvl" in
+    1) lvl_name='NORMAL' lvl_col="$RG_C_GRN" ;;
+    2) lvl_name='WARN' lvl_col="$RG_C_YEL" ;;
+    4) lvl_name='CRITICAL' lvl_col="$RG_C_RED" ;;
+    *) lvl_name="?($lvl)" lvl_col="$RG_C_DIM" ;;
+  esac
+
+  printf '%sRAM X-RAY%s  total %s%s%s   page %sB\n' \
+    "$RG_C_BOLD" "$RG_C_RESET" "$RG_C_BOLD" "$(rg_human "$RG_TOTAL")" "$RG_C_RESET" "$RG_PAGESZ"
+  printf '  pressure   : %s%s%s  (kernel free %s%%)' \
+    "$lvl_col" "$lvl_name" "$RG_C_RESET" "$freep"
+  if ((RG_SWAP_U > 0)); then
+    printf '   swap %s%s used%s / %s\n' \
+      "$RG_C_RED" "$(rg_human "$RG_SWAP_U")" "$RG_C_RESET" "$(rg_human "$RG_SWAP_T")"
+  else
+    printf '   swap %snone%s\n' "$RG_C_GRN" "$RG_C_RESET"
+  fi
+  printf '  '
+  rg_bar "$RG_TOTAL" "$RG_USED" "$RG_CACHED" "$RG_FREE" 46
+  printf '\n'
+  printf '  %s█%s used %-9s  %s█%s cached %-9s  %s░%s free %s\n\n' \
+    "$RG_C_RED" "$RG_C_RESET" "$(rg_human "$RG_USED")" \
+    "$RG_C_YEL" "$RG_C_RESET" "$(rg_human "$RG_CACHED")" \
+    "$RG_C_GRN" "$RG_C_RESET" "$(rg_human "$RG_FREE")"
+
+  printf '  %-14s %12s   %s\n' 'segment' 'size' 'what it is'
+  printf '  %-14s %12s   %s\n' '------------' '----------' '------------------------------------------'
+  printf '  %-14s %12s   %s\n' 'App (anon)' "$(rg_human "$RG_APP")" 'live heap/stack; reclaim = compress or swap'
+  printf '  %-14s %12s   %s\n' 'Wired' "$(rg_human "$RG_WIRED")" 'kernel + locked; CANNOT be paged out'
+  printf '  %-14s %12s   %s%s.%sx squeeze%s\n' 'Compressed' "$(rg_human "$RG_COMPRESSED")" \
+    "$RG_C_DIM" "$RG_COMP_RATIO_X" "$RG_COMP_RATIO_D" "$RG_C_RESET"
+  printf '  %-14s %12s   %s\n' 'Cached files' "$(rg_human "$RG_CACHED")" 'disk cache + purgeable; FREE on demand'
+  printf '  %-14s %12s   %s\n\n' 'Free' "$(rg_human "$RG_FREE")" 'unused right now'
+
+  printf '%sTop %d by real memory (phys_footprint-aware, shared-aware):%s\n' \
+    "$RG_C_BOLD" "$TOP_N_DEFAULT" "$RG_C_RESET"
+  xray_print_top "$TOP_N_DEFAULT"
+}
+
+# top: N processes by real memory + app-grouped totals.
+xray_top() {
+  local n="${1:-$TOP_N_DEFAULT}"
+  [[ $n =~ ^[0-9]+$ ]] || {
+    printf >&2 'top: N must be a number, got %q\n' "$n"
+    return 2
+  }
+  printf '%sTop %d by real memory:%s\n' "$RG_C_BOLD" "$n" "$RG_C_RESET"
+  xray_print_top "$n"
+  printf '\n%sBy application (RSS summed across child PIDs -- overcounts shared mem):%s\n' \
+    "$RG_C_BOLD" "$RG_C_RESET"
+  rg_app_grouped "$n"
+}
+
+xray_print_top() {
+  local n="${1:-$TOP_N_DEFAULT}" line mem pid cpu comm
+  while IFS=$'\t' read -r mem pid cpu comm; do
+    [[ -n $pid ]] || continue
+    ((${#comm} > 42)) && comm="${comm:0:41}…"
+    printf '  %s%9s%s  %-42s %spid %-7s cpu %s%%%s\n' \
+      "$RG_C_CYA" "$(rg_human "$mem")" "$RG_C_RESET" "$comm" \
+      "$RG_C_DIM" "$pid" "$cpu" "$RG_C_RESET"
+  done < <(rg_top_by_mem "$n")
+}
+
+# pid: EXACT phys_footprint of one process + its region map (the "why" for one).
+xray_pid() {
+  local pid="${1:-}"
+  [[ -n $pid ]] || {
+    printf >&2 'usage: ram-xray pid <pid>\n'
+    return 2
+  }
+  [[ $pid =~ ^[0-9]+$ ]] || {
+    printf >&2 'pid: not a number: %q\n' "$pid"
+    return 2
+  }
+  if ! rg_pid_exists "$pid"; then
+    printf >&2 'error: no such process: %s\n' "$pid"
+    return 1
+  fi
+  local comm foot
+  comm="$(rg_pid_comm "$pid")"
+  printf '%sPID %s%s  %s\n' "$RG_C_BOLD" "$pid" "$RG_C_RESET" "$comm"
+  foot="$(rg_footprint "$pid")"
+  if [[ -n $foot ]]; then
+    printf '  %sphys_footprint (Activity Monitor "Memory"): %s%s%s\n' \
+      "$RG_C_BOLD" "$RG_C_CYA" "$(rg_human "$foot")" "$RG_C_RESET"
+  else
+    printf '  %s(vmmap needs same-user or sudo for this pid)%s\n' "$RG_C_DIM" "$RG_C_RESET"
+  fi
+  rg_pid_ps_line "$pid"
+  printf '\n  %sWhere its memory lives (top regions by dirty):%s\n' "$RG_C_BOLD" "$RG_C_RESET"
+  rg_pid_regions "$pid"
+}
+
+# app: sum every process whose command matches <regex>.
+xray_app() {
+  local re="${1:-}"
+  [[ -n $re ]] || {
+    printf >&2 'usage: ram-xray app <regex>\n'
+    return 2
+  }
+  rg_app_match "$re"
+}
+
+# why: summary + dominant region of the 3 biggest hogs.
+xray_why() {
+  xray_summary
+  printf '\n%sWHY -- dominant memory region of the 3 biggest hogs:%s\n' "$RG_C_BOLD" "$RG_C_RESET"
+  local pid comm dom
+  while IFS=$'\t' read -r pid comm; do
+    [[ -n $pid ]] || continue
+    dom="$(rg_dominant_region "$pid")"
+    printf '  %s%-22s%s pid %-7s %s%s%s\n' \
+      "$RG_C_CYA" "${comm##*/}" "$RG_C_RESET" "$pid" \
+      "$RG_C_DIM" "${dom:-<vmmap needs sudo>}" "$RG_C_RESET"
+  done < <(rg_top_pids 3)
+  printf '  %s(run `ram-xray pid <pid>` for any process full region map)%s\n' "$RG_C_DIM" "$RG_C_RESET"
+}
+
+# watch: refresh summary every <secs>.
+xray_watch() {
+  local secs="${1:-3}"
+  [[ $secs =~ ^[0-9]+$ ]] || {
+    printf >&2 'watch: secs must be a number\n'
+    return 2
+  }
+  trap 'exit 130' INT TERM HUP
+  while true; do
+    printf '\033[2J\033[H'
+    printf '%s%(%Y-%m-%d %H:%M:%S)T%s  refresh %ss  (Ctrl-C to stop)\n\n' \
+      "$RG_C_DIM" -1 "$RG_C_RESET" "$secs"
+    xray_summary
+    "$RG_SLEEP" "$secs"
+  done
+}
+
+## Meta -----------------------------------------------------------------------
+
+xray_version() { printf 'ram-xray (ramgate) %s\n' "$RG_VERSION"; }
+
+xray_usage() {
+  cat << 'EOF'
+ram-xray -- read-only RAM introspection for macOS: what's resident, and why.
+
+Usage: ram-xray [global-opts] [command] [args]
+
+Commands:
+  summary           system breakdown + pressure + compressor + top hogs (default)
+  top [N]           top N processes by real memory + app-grouped totals
+  pid <pid>         EXACT phys_footprint of one process + its region map
+  app <regex>       sum every process whose command matches <regex>
+  why               summary + dominant memory region of the 3 biggest hogs
+  watch [secs]      refresh summary every <secs> (default 3)
+  doctor            preflight: bash patch level, required macOS tools, OS build
+  help              this help
+
+Global options:
+  --json            machine-readable JSON (no color, stdout=data)
+  --tsv             machine-readable TSV  (no color, stdout=data)
+  --no-color        disable ANSI even on a TTY
+  -h, --help        show this help
+  -V, --version     show version
+
+Read-only: sends NO signals, mutates nothing. The ACTING companion is a
+separate binary, ram-guard. macOS-only by design.
+EOF
+}
+
+## Dispatch -------------------------------------------------------------------
+
+rg_main() {
+  local -a rest=()
+  while (($#)); do
+    case "$1" in
+      --json) RG_JSON=1 ;;
+      --tsv) RG_TSV=1 ;;
+      --no-color) RG_NO_COLOR=1 ;;
+      -V | --version)
+        xray_version
+        return 0
+        ;;
+      -h | --help)
+        xray_usage
+        return 0
+        ;;
+      --)
+        shift
+        rest+=("$@")
+        break
+        ;;
+      -*)
+        printf >&2 'unknown option: %s\n' "$1"
+        xray_usage >&2
+        return 2
+        ;;
+      *) rest+=("$1") ;;
+    esac
+    shift
+  done
+
+  rg_init_colors # honours RG_NO_COLOR / RG_JSON / RG_TSV / TTY
+
+  local cmd="${rest[0]:-summary}"
+  [[ ${#rest[@]} -gt 0 ]] && rest=("${rest[@]:1}")
+  case "$cmd" in
+    summary) xray_summary ;;
+    top) xray_top "${rest[@]+"${rest[@]}"}" ;;
+    pid) xray_pid "${rest[@]+"${rest[@]}"}" ;;
+    app) xray_app "${rest[@]+"${rest[@]}"}" ;;
+    why) xray_why ;;
+    watch) xray_watch "${rest[@]+"${rest[@]}"}" ;;
+    doctor) rg_doctor xray ;;
+    help | -h | --help) xray_usage ;;
+    *)
+      printf >&2 'unknown command: %s\n' "$cmd"
+      xray_usage >&2
+      return 2
+      ;;
+  esac
+}
+
+[[ ${BASH_SOURCE[0]} == "${0}" ]] && rg_main "$@"

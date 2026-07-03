@@ -1,0 +1,86 @@
+# prek (pre-commit, re-engineered in Rust) configuration for ramgate.
+# Install once: `just hooks-install` (or `prek install --install-hooks`).
+# Full sweep: `just hooks` (`prek run --all-files`).
+# Hooks are guardrails -- fast and deterministic. The real gate (bash -n, shellcheck,
+# tests) lives in `just check`/`just lint`/`just test` and CI, never here.
+#
+# Behaviour is centralised in scripts/hooks/*.bash + config/hooks/*.env:
+#   * safety hooks (secrets, large files, merge markers) BLOCK on failure;
+#   * style hooks (format, commit-msg, branch-name) nudge interactively and a
+#     4s non-answer ABORTS the git action -- never a silent pass, never blocked I/O.
+
+# Install all three stages on a bare `prek install`.
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+
+repos:
+  # --- stock hygiene + safety (auto-fixers and blockers) --------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=512"]
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  - repo: local
+    hooks:
+      # SAFETY -- blocks the commit when a secret is found in the staged diff.
+      - id: secrets
+        name: gitleaks secret scan (staged)
+        entry: scripts/hooks/pre-commit-secrets.bash
+        language: script
+        pass_filenames: false
+        stages: [pre-commit]
+
+      # STYLE -- auto-format staged Bash (shfmt) + Markdown (rumdl) and re-stage.
+      - id: format
+        name: auto-format (shfmt + rumdl) and re-stage
+        entry: scripts/hooks/pre-commit-format.bash
+        language: script
+        files: '(\.bash$|\.md$|^bin/[^/]+$)'
+        stages: [pre-commit]
+
+      # QUALITY -- shellcheck the binaries, libs, tests, and the hook scripts.
+      - id: shellcheck
+        name: shellcheck (-x) bin, lib, test, hooks
+        entry: bash -c 'command -v shellcheck >/dev/null 2>&1 && shellcheck -x "$@" || echo "shellcheck not installed -- skipping"' --
+        language: system
+        files: '^(bin/[^/]+|lib/.*\.bash|test/.*\.bash|scripts/hooks/.*\.bash)$'
+
+      # QUALITY -- the build-less "compile": bash -n parses every bash file.
+      - id: bash-syntax
+        name: bash -n syntax check
+        entry: bash -c 'err=0; for f in "$@"; do bash -n "$f" || err=1; done; exit $err' --
+        language: system
+        files: '(\.bash$|^bin/[^/]+$)'
+
+      # QUALITY -- markdown lint (rumdl) on docs.
+      - id: rumdl
+        name: rumdl (markdown lint)
+        entry: rumdl check
+        language: system
+        types: [markdown]
+        pass_filenames: false
+
+      # STYLE -- soft-enforce Conventional Commits (deterministic fix -> nudge -> AI).
+      - id: conventional-commit
+        name: conventional commit message
+        entry: scripts/hooks/commit-msg.bash
+        language: script
+        stages: [commit-msg]
+
+      # STYLE -- soft-enforce conventional branch names on push.
+      - id: conventional-branch
+        name: conventional branch name
+        entry: scripts/hooks/pre-push-branch.bash
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

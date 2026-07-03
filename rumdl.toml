@@ -1,0 +1,21 @@
+# rumdl -- fast Markdown linter/formatter config for ramgate.
+# Pragmatic ruleset: prose-friendly, doesn't fight long lines or inline HTML in docs.
+# The `rumdl` prek hook runs `rumdl check` against this config.
+
+exclude = ["var/", ".just/state/", ".omc/"]
+
+[MD013]
+# line length -- off for prose; tables and links routinely exceed 80
+enabled = false
+
+[MD024]
+# allow duplicate headings under different parents (changelog "Added" sections)
+siblings_only = true
+
+[MD033]
+# allow inline HTML (details/summary, kbd) in docs
+enabled = false
+
+[MD041]
+# first line need not be a top-level heading (front-matter friendly)
+enabled = false

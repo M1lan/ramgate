@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# fixtures/bin/osascript -- inert fake. Notifications must never reach the real
+# desktop during tests. Records nothing, does nothing, always succeeds.
+exit 0

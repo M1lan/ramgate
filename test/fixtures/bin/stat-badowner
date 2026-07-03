@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# fixtures/bin/stat-badowner -- fake BSD `stat` that reports the config file as
+# owned by uid 0 with mode 600. Lets the config test exercise the ownership gate
+# in rg_parse_conf ("not owned by the invoking uid -> refuse") deterministically,
+# without needing a real root-owned file. Understands the two calls ramgate makes:
+#   stat -f '%u'  <file>   -> owner uid  (forced to FAKE_STAT_OWNER, default 0)
+#   stat -f '%Lp' <file>   -> perm bits  (forced to FAKE_STAT_PERM,  default 600)
+set -uo pipefail
+IFS=$' \t\n'
+export LC_ALL=C
+
+spec=''
+while (($#)); do
+  case "$1" in
+    -f) shift; spec="${1:-}" ;;
+    *) : ;;
+  esac
+  shift
+done
+case "$spec" in
+  '%u') printf '%s\n' "${FAKE_STAT_OWNER:-0}" ;;
+  '%Lp') printf '%s\n' "${FAKE_STAT_PERM:-600}" ;;
+  *) exit 1 ;;
+esac
+exit 0

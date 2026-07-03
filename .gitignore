@@ -1,0 +1,22 @@
+# ramgate — deny-by-default is not used here; ignore only generated/runtime state.
+
+# Justfile harness runtime/bootstrap state (helpers write here)
+.just/state/
+.just/**/state/
+
+# Runtime data the guard writes
+var/
+*.log
+
+# Local config (may hold user tunables; never track)
+ramgate.conf
+
+# Editor / OS cruft
+*.swp
+.DS_Store
+
+# Python helper caches (if any .py helpers ever appear)
+__pycache__/
+
+# AI hook secrets (real file; sample is tracked)
+config/hooks/ai.env

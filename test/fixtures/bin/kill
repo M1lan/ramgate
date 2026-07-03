@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# fixtures/bin/kill -- recording fake `kill`. Sends NO real signal; instead it
+# appends its raw argument vector (one invocation per line, e.g. "-STOP 5001")
+# to $FAKE_KILL_LOG and exits 0 (signal "succeeded"). Tests assert on the log to
+# prove exactly which signals WOULD have been sent -- and, crucially, that none
+# were sent when the pid-revalidation / budget / dry-run gates should fire.
+set -uo pipefail
+IFS=$' \t\n'
+export LC_ALL=C
+
+log="${FAKE_KILL_LOG:?FAKE_KILL_LOG unset -- refusing to run fake kill without a log}"
+printf '%s\n' "$*" >> "$log"
+exit 0
