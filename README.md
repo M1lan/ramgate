@@ -178,4 +178,4 @@ parameter expansion over external commands, `set -uo pipefail` (never bare `set 
 
 ## License
 
-MIT © 2026 Milan Santosi. See [LICENSE](LICENSE).
+AGPL-3.0-or-later © 2026 Milan Santosi. See [LICENSE](LICENSE).
