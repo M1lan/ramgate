@@ -45,7 +45,7 @@ assert_eq '0 0' "$(swap_case 'garbage with no numbers')" 'rg_swap unparseable ->
 ## --- rg_breakdown math incl. RG_USED ---------------------------------------
 # vm_stat + sysctl(hw.memsize, vm.swapusage) all mocked. Expected values were
 # computed independently from the page counts in fixtures/vm_stat.txt (pgsz=16384).
-export RG_VMSTAT="$RG_FIX/bin/vmstat-fixture"
+export RG_VMSTAT="$scratch/vmstat-fixture"
 # tiny inline vm_stat stub: cat the canned fixture.
 cat > "$RG_VMSTAT" << EOF
 #!/usr/bin/env bash
@@ -86,12 +86,7 @@ assert_eq '0' "$RG_APP" 'RG_APP floors at 0 when purgeable > anon'
 ## --- no-gawk degrade path ---------------------------------------------------
 # sample.bash must stay fully functional with NO gawk (it may run mid-OOM when
 # fork can fail). Blank RG_GAWK and confirm the breakdown still computes.
-export RG_VMSTAT="$RG_FIX/bin/vmstat-fixture"
-cat > "$RG_VMSTAT" << EOF
-#!/usr/bin/env bash
-printf '%s\n' "\$(<"$RG_FIX/vm_stat.txt")"
-EOF
-chmod +x "$RG_VMSTAT"
+export RG_VMSTAT="$scratch/vmstat-fixture"
 RG_GAWK='' rg_breakdown
 assert_eq '1015808000' "$RG_USED" 'rg_breakdown works with RG_GAWK empty (no-gawk degrade)'
 

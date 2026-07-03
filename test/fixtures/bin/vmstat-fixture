@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-printf '%s\n' "$(<"/Users/milan.santosi/projects/ramgate/test/fixtures/vm_stat.txt")"
