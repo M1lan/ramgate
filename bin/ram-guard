@@ -35,7 +35,7 @@ IFS=$' \t\n'
 export LC_ALL=C
 
 readonly RG_VERSION='0.1.0'
-readonly LABEL='com.milansantosi.ramgate'
+readonly LABEL='org.ramgate.guard'
 
 _self="${BASH_SOURCE[0]}"
 while [[ -L $_self ]]; do

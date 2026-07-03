@@ -54,7 +54,7 @@ paused or killed** -- i.e. steering the circuit breaker. The main vectors:
 
 Please report suspected vulnerabilities **privately** to:
 
-<milan.santosi@gmail.com>
+<security@ramgate.invalid>
 
 Include a description, affected version (`ram-xray --version` / `ram-guard
 --version`), macOS version, and a minimal reproduction if possible. Please do not

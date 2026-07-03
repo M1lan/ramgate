@@ -14,7 +14,7 @@
 5001	4194304	502	5001	8388608	40.0	Thu Jul 2 16:58:11 2026	/Applications/Google Chrome.app/Contents/MacOS/Google Chrome Helper (Renderer)
 5002	1048576	502	5002	2097152	10.0	Fri Jul 3 09:00:00 2026	/usr/bin/somebigapp
 5003	2097152	502	5003	4194304	20.0	Mon Jun 1 08:15:30 2026	/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer
-5004	512000	502	5004	1024000	5.0	Thu Jul 2 10:00:00 2026	/Users/milan.santosi/projects/ramgate/bin/ram-guard
+5004	512000	502	5004	1024000	5.0	Thu Jul 2 10:00:00 2026	/Users/user/projects/ramgate/bin/ram-guard
 5005	900000	502	5005	1800000	8.0	Wed Jul 1 12:00:00 2026	/Applications/Ghostty.app/Contents/MacOS/Ghostty
 5006	400000	502	5006	800000	3.0	Wed Jul 1 12:00:01 2026	/opt/homebrew/bin/tmux
 5007	350000	502	5007	700000	2.0	Wed Jul 1 12:00:02 2026	/bin/zsh

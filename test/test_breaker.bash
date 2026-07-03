@@ -39,7 +39,7 @@ export RG_UID=502
 
 rg_defaults # seed WARN_PCT/CRIT_PCT/MIN_RSS_MB/GROW_MIN_MB/...
 NOTIFY=0
-LABEL='com.milansantosi.ramgate'
+LABEL='org.ramgate.guard'
 
 # start-epoch token for the Chrome hog (pid 5001), via the SUT (not hand-mirrored).
 _rg_lstart_to_epoch EP5001 Jul 2 16:58:11 2026
@@ -55,7 +55,7 @@ assert_eq 'NORMAL' "$(guard_severity 1 100)" 'severity NORMAL at 100% free'
 
 ## --- protect set covers SELF + terminal/shell ------------------------------
 guard_build_protect_set 'ram-guard' "$LABEL" "$$"
-assert_match '/Users/milan.santosi/projects/ramgate/bin/ram-guard' "$GUARD_PROTECT_RE" \
+assert_match '/Users/user/projects/ramgate/bin/ram-guard' "$GUARD_PROTECT_RE" \
   'protect set covers the guard OWN binary (ram-guard) -- can never target itself'
 assert_match '/Applications/Ghostty.app/Contents/MacOS/Ghostty' "$GUARD_PROTECT_RE" \
   'protect set covers the Ghostty terminal'
