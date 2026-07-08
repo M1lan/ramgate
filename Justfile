@@ -181,20 +181,20 @@ git-log:
 git-diff:
     @git diff --stat
 
-## Git hooks (prek harness · LOCAL)
+## Git hooks (hk harness · LOCAL)
 
-# Install the prek git hooks for all 3 stages (pre-commit, commit-msg, pre-push).
+# Install the hk git hooks for all 3 stages (pre-commit, commit-msg, pre-push).
 [group('git')]
 [no-exit-message]
 hooks-install:
     @bash scripts/install-hooks.bash
 
-# Run every prek hook against all files (full sweep).
+# Run every hk check against all files (full sweep).
 [group('git')]
 [no-exit-message]
 hooks:
-    @if command -v prek >/dev/null 2>&1; then prek run --all-files; \
-     else printf 'prek not installed -- run: just hooks-install\n' >&2; exit 1; fi
+    @if command -v hk >/dev/null 2>&1; then hk check --all; \
+     else printf 'hk not installed -- run: just hooks-install\n' >&2; exit 1; fi
 
 # Seed config/hooks/ai.env from the sample for the optional local-first AI assist.
 [group('git')]

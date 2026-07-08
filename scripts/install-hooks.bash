@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # install-hooks.bash -- LOCAL git-hook installer for ramgate (developer machine only).
 #
-# Verifies `prek` (the Rust pre-commit) is on PATH, offers to `brew install` it if not,
-# makes the hook scripts executable, and runs `prek install` for all three stages
-# (pre-commit, commit-msg, pre-push). Never touches anything outside this repo; never
-# uses sudo. Safe and idempotent to re-run.
+# Verifies `hk` (the pkl-based hook runner) is on PATH, offers to `brew install` it if
+# not, makes the hook scripts executable, and runs `hk install` (which wires up every
+# stage declared in hk.pkl: pre-commit, commit-msg, pre-push). Never touches anything
+# outside this repo; never uses sudo. Safe and idempotent to re-run.
 #
 # Usage:  bash scripts/install-hooks.bash        (or: just hooks-install)
 set -uo pipefail
@@ -23,29 +23,29 @@ cd "$repo_root" || exit 1
 
 log() { printf '[install-hooks] %s\n' "$*"; }
 
-# --- 1. ensure prek is available --------------------------------------------
-if ! command -v prek > /dev/null 2>&1; then
-  log "prek not found on PATH."
-  log "prek is the Rust pre-commit runner. Install options:"
-  log "  brew install prek        (Homebrew)"
-  log "  cargo install prek       (Rust toolchain)"
+# --- 1. ensure hk is available ----------------------------------------------
+if ! command -v hk > /dev/null 2>&1; then
+  log "hk not found on PATH."
+  log "hk is the pkl-based git-hook runner. Install options:"
+  log "  brew install hk          (Homebrew)"
+  log "  cargo install hk         (Rust toolchain)"
   if command -v brew > /dev/null 2>&1 && [[ -t 0 ]]; then
-    read -r -p "[install-hooks] run 'brew install prek' now? [y/N]: " ans
+    read -r -p "[install-hooks] run 'brew install hk' now? [y/N]: " ans
     if [[ "${ans:-n}" == [yY] ]]; then
-      brew install prek || {
-        log "brew install prek failed -- install it manually and re-run."
+      brew install hk || {
+        log "brew install hk failed -- install it manually and re-run."
         exit 1
       }
     else
-      log "skipped -- install prek manually and re-run."
+      log "skipped -- install hk manually and re-run."
       exit 1
     fi
   else
-    log "install prek and re-run this script."
+    log "install hk and re-run this script."
     exit 1
   fi
 fi
-log "prek: $(command -v prek) ($(prek --version 2> /dev/null || echo '?'))"
+log "hk: $(command -v hk) ($(hk version 2> /dev/null || echo '?'))"
 
 # --- 2. make the hook scripts executable ------------------------------------
 count=0
@@ -55,12 +55,12 @@ done < <(fd -0 -t f -e bash . scripts/hooks 2> /dev/null || find scripts/hooks -
 chmod +x scripts/install-hooks.bash 2> /dev/null || true
 log "made $count hook script(s) executable"
 
-# --- 3. install all three stages --------------------------------------------
-log "installing prek hooks (pre-commit, commit-msg, pre-push)..."
-if prek install --install-hooks -t pre-commit -t commit-msg -t pre-push; then
+# --- 3. install the git hooks (all stages declared in hk.pkl) ----------------
+log "installing hk hooks (pre-commit, commit-msg, pre-push)..."
+if hk install; then
   log "OK -- hooks installed. Sweep everything with:  just hooks"
   log "Optional AI-assist for commit rewrites:  just hooks-ai-setup"
 else
-  log "prek install failed -- check '.pre-commit-config.yaml' with: prek validate-config"
+  log "hk install failed -- check 'hk.pkl' with: hk validate"
   exit 1
 fi
