@@ -20,3 +20,7 @@ __pycache__/
 
 # AI hook secrets (real file; sample is tracked)
 config/hooks/ai.env
+
+# AI harness (OMC/OMX) session state/logs that landed under assets/
+assets/.omc/
+assets/.omx/

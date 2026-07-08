@@ -1,12 +1,5 @@
-# ── ramgate Justfile -- macOS memory x-ray + OOM guard (two-binary, build-less) ─
-# Build system: NONE. ramgate is pure GNU Bash >= 5.3.15, macOS-only. There is
-# no compiler: the "compile" is `bash -n` on every file (just check) followed by
-# shellcheck (just lint). Facts on the splash are counts of bin/*, lib/**.bash,
-# and test files -- never a build tool. TUI/logic lives in .just/helpers/ (pure
-# GNU Bash 5.3+, see lib.bash). Do not put large bash blobs here.
-#
-# Start here: a bare `just` shows the splash (enter/m -> menu, f -> fzf).
-# Zero-to-ready from a clean checkout: `make`.   Full CI gate: `just ci`.
+#!/usr/bin/env just
+
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set dotenv-load := false
 set positional-arguments := true
@@ -23,7 +16,7 @@ alias t := test
 default:
     @'{{helpers}}/info-screen.bash'
 
-# ── Umbrella ─────────────────────────────────────────────────────────────────
+## Umbrella
 
 # The exact gate: syntax check + shellcheck + tests (bundled via deps).
 [group('umbrella')]
@@ -37,7 +30,7 @@ qa: fmt check lint test
 [group('umbrella')]
 all: doctor qa
 
-# ── Meta ─────────────────────────────────────────────────────────────────────
+## Meta
 
 # Show available recipes.
 [group('meta')]
@@ -78,7 +71,7 @@ doctor-install:
 bootstrap:
     @'{{helpers}}/bootstrap.bash'
 
-# ── Build (build-less: format + the bash -n "compile") ───────────────────────
+## Build (build-less: format + the bash -n "compile") ───────────────────────
 
 # Format every shell file in place (shfmt: 2-space, switch indent, redir spacing).
 [group('build')]
@@ -100,7 +93,7 @@ check:
      if (( bad )); then printf 'check: syntax errors above\n' >&2; exit 1; fi; \
      printf 'check: all files parse (bash -n)\n'
 
-# ── Run ──────────────────────────────────────────────────────────────────────
+## Run
 
 # Run the read-only introspector (summary|top|pid|app|why|watch|doctor).
 [group('run')]
@@ -114,7 +107,7 @@ run-xray *args:
 run-guard *args:
     @bin/ram-guard "$@"
 
-# ── Test ─────────────────────────────────────────────────────────────────────
+## Test
 
 # Run the pure-bash test harness (test/run.bash, else each test/*.bash).
 [group('test')]
@@ -129,7 +122,7 @@ test:
      for f in "${files[@]}"; do printf '%s▸ %s%s\n' "$(tput bold 2>/dev/null||true)" "$f" "$(tput sgr0 2>/dev/null||true)"; bash "$f" || fail=1; done; \
      exit "$fail"
 
-# ── Lint ─────────────────────────────────────────────────────────────────────
+## Lint
 
 # Static-check all shell (shellcheck -x; helpers at -S warning). Skipped if absent.
 [group('lint')]
@@ -139,7 +132,7 @@ lint:
      if compgen -G 'test/*.bash' >/dev/null 2>&1; then shellcheck -x test/*.bash; fi; \
      shellcheck -x -S warning -P .just/helpers .just/helpers/*.bash
 
-# ── Setup (LOCAL to $HOME -- never root, never sudo) ─────────────────────────
+## Setup (LOCAL to $HOME -- never root, never sudo)
 
 # Symlink bin/ram-xray + bin/ram-guard into ~/.local/bin (no root, no sudo).
 [group('setup')]
@@ -164,14 +157,14 @@ uninstall:
        else printf 'skip %s (not a symlink)\n' "$dest/$b"; fi; \
      done
 
-# ── Clean ────────────────────────────────────────────────────────────────────
+## Clean
 
 # Remove harness runtime state (.just/state: bootstrap log/steps/stats).
 [group('clean')]
 clean:
     rm -rf .just/state
 
-# ── Git ──────────────────────────────────────────────────────────────────────
+## Git
 
 # Working-tree status, short + branch header.
 [group('git')]
@@ -188,7 +181,7 @@ git-log:
 git-diff:
     @git diff --stat
 
-# ── Git hooks (prek harness · LOCAL) ─────────────────────────────────────────
+## Git hooks (prek harness · LOCAL)
 
 # Install the prek git hooks for all 3 stages (pre-commit, commit-msg, pre-push).
 [group('git')]
@@ -219,7 +212,7 @@ hooks-ai-setup:
 commit *args:
     @git commit "$@"
 
-# ── Release (SemVer · git-cliff) ─────────────────────────────────────────────
+## Release (SemVer · git-cliff)
 
 # Regenerate CHANGELOG.md from Conventional Commits via git-cliff.
 [group('release')]
@@ -234,7 +227,7 @@ changelog:
 release part:
     @bash scripts/release.bash "{{part}}"
 
-# ── Utilities ────────────────────────────────────────────────────────────────
+## Utilities
 
 # Count lines of shell across bin/ + lib/ (tokei/scc if present, else wc).
 [group('util')]

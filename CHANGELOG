@@ -1,0 +1,36 @@
+Ramgate Changelog
+
+
+All notable changes to ramgate are recorded here.  The format follows
+Keep a Changelog (https://keepachangelog.com/), and the project adheres
+to Semantic Versioning (https://semver.org/).
+
+
+* Version 0.1.0 (2026-07-03)
+
+** Added
+
+  - Ramgate -- two-binary pure-Bash macOS memory tool (v0.1.0).
+
+** Fixed
+
+  - test: write the vm_stat stub to scratch; untrack the generated
+    fixture.
+  - Make "just ci" pass shellcheck (suppress false positives; fix
+    SC2155 and SC2034).
+
+** Changed
+
+  - Shfmt-canonicalize all sources; move hooks scratch to $TMPDIR.
+
+** Documentation
+
+  - Compress to technical essentials; drop CONTRIBUTING and
+    ARCHITECTURE; rumdl 190-column.
+
+** Miscellaneous
+
+  - license: relicense MIT -> AGPL-3.0-or-later.
+  - Pseudonymize PII (contact, copyright, launchd label, fixture paths).
+  - Strip the remaining contact email and a stale fixture path.
+  - Drop the copyright line; fix a fixture path.

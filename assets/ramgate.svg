@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" width="100%" height="100%" role="img" aria-label="ramgate logo">
+  <title>ramgate logo v4</title>
+  <desc>A premium cyber-medieval crest combining a wooden gate shield with a stylized steel ram head and golden horns.</desc>
+  <defs>
+    <!-- Ambient Shadow Filter for the outer silhouette -->
+    <filter id="ambientShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.65 0"/>
+      <feOffset dx="0" dy="10"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Element Drop Shadow for individual volumetric components -->
+    <filter id="elementShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="5" stdDeviation="4" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Cyan Glow for Energy Eyes -->
+    <filter id="cyanGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Shield Clip Path -->
+    <clipPath id="shieldClip">
+      <path d="M 256 60 C 330 60, 410 90, 410 120 C 410 240, 360 340, 256 415 C 152 340, 102 240, 102 120 C 102 90, 182 60, 256 60 Z"/>
+    </clipPath>
+
+    <!-- Gold Metallic Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFEBB3"/>
+      <stop offset="30%" stop-color="#F2C94C"/>
+      <stop offset="70%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#8A6D0B"/>
+    </linearGradient>
+
+    <!-- Steel Gradients -->
+    <linearGradient id="steelLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F3F7FA"/>
+      <stop offset="50%" stop-color="#D5E1ED"/>
+      <stop offset="100%" stop-color="#A5B8C9"/>
+    </linearGradient>
+
+    <linearGradient id="steelMid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A4B6C5"/>
+      <stop offset="50%" stop-color="#7B8E9E"/>
+      <stop offset="100%" stop-color="#556675"/>
+    </linearGradient>
+
+    <linearGradient id="steelDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5E6D7A"/>
+      <stop offset="50%" stop-color="#3D4A54"/>
+      <stop offset="100%" stop-color="#242C33"/>
+    </linearGradient>
+
+    <!-- Wood Plank Gradients (varying slightly for realistic depth) -->
+    <linearGradient id="woodPlankGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3A2014"/>
+      <stop offset="15%" stop-color="#54321B"/>
+      <stop offset="50%" stop-color="#6E4429"/>
+      <stop offset="85%" stop-color="#54321B"/>
+      <stop offset="100%" stop-color="#2B160C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient shadow applied to the entire badge group -->
+  <g filter="url(#ambientShadow)">
+
+    <!-- 1. Shield Background Planks (Clipped to Shield Shape) -->
+    <g clip-path="url(#shieldClip)">
+      <!-- 6 vertical planks -->
+      <rect x="90" y="50" width="55" height="380" fill="url(#woodPlankGrad)"/>
+      <rect x="145" y="50" width="55" height="380" fill="url(#woodPlankGrad)"/>
+      <rect x="200" y="50" width="56" height="380" fill="url(#woodPlankGrad)"/>
+      <rect x="256" y="50" width="56" height="380" fill="url(#woodPlankGrad)"/>
+      <rect x="312" y="50" width="55" height="380" fill="url(#woodPlankGrad)"/>
+      <rect x="367" y="50" width="55" height="380" fill="url(#woodPlankGrad)"/>
+
+      <!-- Subtle vertical divider lines between planks -->
+      <line x1="145" y1="50" x2="145" y2="430" stroke="#1F0F08" stroke-width="2"/>
+      <line x1="200" y1="50" x2="200" y2="430" stroke="#1F0F08" stroke-width="2"/>
+      <line x1="256" y1="50" x2="256" y2="430" stroke="#1F0F08" stroke-width="2"/>
+      <line x1="312" y1="50" x2="312" y2="430" stroke="#1F0F08" stroke-width="2"/>
+      <line x1="367" y1="50" x2="367" y2="430" stroke="#1F0F08" stroke-width="2"/>
+
+      <!-- Organic Wood Grain lines -->
+      <g fill="none" stroke="#25140D" stroke-width="1.5" opacity="0.22" stroke-linecap="round">
+        <path d="M 120 70 Q 130 180 115 280 T 130 400"/>
+        <path d="M 175 60 Q 165 200 185 300 T 170 420"/>
+        <path d="M 230 75 Q 240 190 220 310 T 235 410"/>
+        <path d="M 285 75 Q 275 190 295 310 T 280 410"/>
+        <path d="M 335 60 Q 345 200 325 300 T 340 420"/>
+        <path d="M 390 70 Q 380 180 395 280 T 380 400"/>
+      </g>
+
+      <!-- 2. Gate Iron Reinforcements (Horizontal Steel Bands) -->
+      <g filter="url(#elementShadow)">
+        <rect x="90" y="110" width="332" height="24" fill="url(#steelMid)"/>
+        <rect x="90" y="315" width="332" height="24" fill="url(#steelMid)"/>
+        <!-- Dark borders on the iron bands -->
+        <line x1="90" y1="110" x2="422" y2="110" stroke="#1A2026" stroke-width="1.5"/>
+        <line x1="90" y1="134" x2="422" y2="134" stroke="#1A2026" stroke-width="1.5"/>
+        <line x1="90" y1="315" x2="422" y2="315" stroke="#1A2026" stroke-width="1.5"/>
+        <line x1="90" y1="339" x2="422" y2="339" stroke="#1A2026" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- 3. Shield Outer Rim / Golden Border -->
+    <path d="M 256 60 C 330 60, 410 90, 410 120 C 410 240, 360 340, 256 415 C 152 340, 102 240, 102 120 C 102 90, 182 60, 256 60 Z"
+          fill="none" stroke="url(#goldGrad)" stroke-width="12" stroke-linejoin="round" filter="url(#elementShadow)"/>
+    <!-- Subtle inner dark line on border for crispness -->
+    <path d="M 256 65 C 326 65, 404 94, 404 120 C 404 236, 355 334, 256 408 C 157 334, 108 236, 108 120 C 108 94, 186 65, 256 65 Z"
+          fill="none" stroke="#25140D" stroke-width="1.5" opacity="0.4"/>
+
+    <!-- 4. Gate Boss / Backing Plate for the Ram Head -->
+    <circle cx="256" cy="210" r="70" fill="url(#steelDark)" stroke="url(#goldGrad)" stroke-width="4" filter="url(#elementShadow)"/>
+    <circle cx="256" cy="210" r="54" fill="none" stroke="#1A2026" stroke-width="2" opacity="0.6"/>
+
+    <!-- 5. Symmetrical Elements (Left & Right halves) -->
+    <!-- RIGHT SIDE GROUP (contains the right horn, right head plates, right rivets, and right eye) -->
+    <g id="rightSide">
+      <!-- Rivets on horizontal iron bands -->
+      <circle cx="335" cy="122" r="5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+      <circle cx="385" cy="122" r="5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+      <circle cx="335" cy="327" r="5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+      <circle cx="385" cy="327" r="5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+
+      <!-- Rivets on shield border -->
+      <circle cx="330" cy="72" r="4.5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+      <circle cx="382" cy="98" r="4.5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+      <circle cx="404" cy="148" r="4.5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+      <circle cx="388" cy="225" r="4.5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+      <circle cx="350" cy="305" r="4.5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+      <circle cx="302" cy="370" r="4.5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+
+      <!-- Majestic Horn (Right) -->
+      <path d="M 275 135
+               C 320 90, 360 50, 400 50
+               C 445 50, 470 100, 465 160
+               C 455 220, 415 260, 375 260
+               C 335 260, 310 220, 325 195
+               C 340 170, 365 185, 380 205
+               C 395 225, 425 195, 430 160
+               C 435 125, 400 95, 350 110
+               C 320 115, 295 125, 275 135 Z"
+            fill="url(#goldGrad)" filter="url(#elementShadow)"/>
+
+      <!-- Horn Ridges for 3D depth -->
+      <g fill="none" stroke="#5E4703" stroke-width="2.5" stroke-linecap="round" opacity="0.85">
+        <path d="M 305 122 C 312 122, 320 135, 320 145"/>
+        <path d="M 345 98 C 355 102, 365 125, 360 145"/>
+        <path d="M 390 92 C 405 102, 415 125, 405 155"/>
+        <path d="M 435 110 C 445 130, 445 165, 420 190"/>
+        <path d="M 445 165 C 445 190, 420 220, 395 225"/>
+        <path d="M 420 225 C 405 240, 380 245, 365 230"/>
+      </g>
+      <g fill="none" stroke="#FFEBB3" stroke-width="1.2" stroke-linecap="round" opacity="0.6">
+        <path d="M 306 120 C 313 120, 321 133, 321 143"/>
+        <path d="M 346 96 C 356 100, 366 123, 361 143"/>
+        <path d="M 391 90 C 406 100, 416 123, 406 153"/>
+        <path d="M 436 108 C 446 128, 446 163, 421 188"/>
+        <path d="M 446 163 C 446 188, 421 218, 396 223"/>
+        <path d="M 421 223 C 406 238, 381 243, 366 228"/>
+      </g>
+
+      <!-- Ram Head Armor Plates (Right Half) -->
+      <!-- Forehead Plate -->
+      <polygon points="256,120 275,135 290,185 256,205" fill="url(#steelLight)"/>
+      <!-- Cheek Plate -->
+      <polygon points="290,185 315,215 282,235 256,205" fill="url(#steelDark)"/>
+      <!-- Muzzle / Nose Plate -->
+      <polygon points="256,205 282,235 272,285 256,300" fill="url(#steelMid)"/>
+      <!-- Nose Tip -->
+      <polygon points="256,300 272,285 268,305 256,315" fill="url(#steelDark)"/>
+      <!-- Chin Guard -->
+      <polygon points="256,315 268,305 262,320 256,325" fill="url(#steelLight)"/>
+
+      <!-- Sleek Glowing Cyber-Eye Slit (Cyan Energy) -->
+      <!-- Outer glow -->
+      <polygon points="270,200 292,209 288,214 268,205" fill="#00F2FE" filter="url(#cyanGlow)"/>
+      <!-- Inner core -->
+      <polygon points="272,201 290,209 287,212 270,204" fill="#FFFFFF"/>
+    </g>
+
+    <!-- LEFT SIDE GROUP (Perfect mathematical mirror of Right Side) -->
+    <use href="#rightSide" xlink:href="#rightSide" transform="translate(512, 0) scale(-1, 1)"/>
+
+    <!-- 6. Non-mirrored Centerline Elements (drawn once to prevent overlay seams) -->
+    <!-- Center rivets on shield border -->
+    <circle cx="256" cy="66" r="4.5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+    <circle cx="256" cy="409" r="4.5" fill="url(#goldGrad)" stroke="#25140D" stroke-width="1"/>
+
+    <!-- Central seam / division line for the gate -->
+    <line x1="256" y1="120" x2="256" y2="325" stroke="#1A2026" stroke-width="1.5" opacity="0.8"/>
+
+  </g>
+
+  <!-- ===== TYPOGRAPHY & WORDMARK ===== -->
+  <g>
+    <!-- Primary Title -->
+    <text x="256" y="455" text-anchor="middle"
+          font-family="'Cinzel', 'Trajan Pro', 'Georgia', 'Times New Roman', serif"
+          font-size="34" font-weight="900" letter-spacing="8"
+          fill="url(#goldGrad)" filter="url(#elementShadow)">RAMGATE</text>
+    <!-- Secondary Subtitle -->
+    <text x="256" y="480" text-anchor="middle"
+          font-family="system-ui, -apple-system, sans-serif"
+          font-size="11" font-weight="700" letter-spacing="4"
+          fill="#A0AEC0">OOM PROTECTION &amp; INTROSPECTION</text>
+  </g>
+</svg>

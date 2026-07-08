@@ -1,0 +1,49 @@
+Ramgate Security
+
+
+* Privilege model
+
+  - Same-user only: signals only processes owned by the invoking user.
+    No sudo, no root install.  The LaunchAgent runs in the user session.
+  - ram-xray is inert: it sends no signals, mutates no state, and never
+    sources lib/guard/.
+  - Offline: no network calls.  AI commit assist is local-first and
+    opt-in.
+
+
+* Threat vectors and defenses
+
+  Tampered ramgate.conf (steer the killer, inject code):
+    whitelist-parsed, never sourced; unknown keys ignored; malformed
+    values fall back to defaults; the file is refused if it is
+    group- or world-writable, or not self-owned.
+
+  Crafted process name or command line:
+    metadata is data -- quoted literal comparison, never eval, never
+    widens a glob.
+
+  Tampered config/hooks/ai.env (HOOKS_AI_CMD is executed):
+    a trusted developer-owned file, written by the setup wizard with
+    printf %q, and gitignored.
+
+  Guard targets itself or the terminal:
+    the protect set is derived at runtime -- kernel_task, launchd,
+    WindowServer, Finder/Dock, terminal/tmux/shell, and ram-guard's own
+    binary.
+
+  Stray real signal from tests:
+    a single signal path in lib/guard/breaker.bash, with an injectable
+    seam; tests capture would-be signals.
+
+  Committed secrets:
+    the gitleaks pre-commit scan blocks on a hit; ai.env is gitignored.
+
+
+* Reporting
+
+  Report privately via GitHub Security Advisories (the repository
+  Security tab).  Include a description, the affected version
+  (ram-xray --version / ram-guard --version), the macOS version, and a
+  minimal reproduction.
+
+  Please do not open public issues for unfixed vulnerabilities.

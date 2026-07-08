@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"
+     width="400" height="400" role="img"
+     aria-label="ramgate: a viking pushing a battering ram toward a wooden gate">
+  <title>ramgate</title>
+  <desc>A cartoon viking pushing a wooden battering ram with iron horned head toward a wooden gate.</desc>
+
+  <defs>
+    <!-- Sky gradient: warm sunset -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd66b"/>
+      <stop offset="1" stop-color="#ff9d4d"/>
+    </linearGradient>
+
+    <!-- Gate wood: rich warm tones -->
+    <linearGradient id="gateWood" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a5a2b"/>
+      <stop offset="1" stop-color="#5e3a17"/>
+    </linearGradient>
+
+    <!-- Ram log: lighter wood -->
+    <linearGradient id="log" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b8844e"/>
+      <stop offset="1" stop-color="#8a5a2b"/>
+    </linearGradient>
+
+    <!-- Steel: cool metallic -->
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8edf2"/>
+      <stop offset="0.5" stop-color="#a0adb9"/>
+      <stop offset="1" stop-color="#6a7885"/>
+    </linearGradient>
+
+    <!-- Viking tunic: deep red -->
+    <linearGradient id="tunic" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c4523a"/>
+      <stop offset="1" stop-color="#a03a28"/>
+    </linearGradient>
+
+    <!-- Ground -->
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a9f4a"/>
+      <stop offset="1" stop-color="#5a7f32"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ===== BADGE BACKGROUND ===== -->
+  <circle cx="200" cy="200" r="190" fill="url(#sky)" stroke="#3a2410" stroke-width="10"/>
+  <!-- Subtle inner shadow ring -->
+  <circle cx="200" cy="200" r="185" fill="none" stroke="#000" stroke-opacity="0.08" stroke-width="3"/>
+
+  <!-- ===== GROUND ===== -->
+  <path d="M15 305 Q200 345 385 305 L385 385 L15 385 Z" fill="url(#ground)"/>
+  <path d="M15 305 Q200 345 385 305" fill="none" stroke="#4d6c25" stroke-width="5"/>
+
+  <!-- ===== WOODEN GATE (right side) ===== -->
+  <g>
+    <!-- Right post -->
+    <rect x="318" y="65" width="28" height="255" rx="4" fill="url(#gateWood)" stroke="#2f1c0b" stroke-width="4"/>
+
+    <!-- Gate planks -->
+    <rect x="246" y="75" width="76" height="235" rx="4" fill="url(#gateWood)" stroke="#2f1c0b" stroke-width="4"/>
+
+    <!-- Wood grain lines -->
+    <line x1="266" y1="79" x2="266" y2="306" stroke="#3a2410" stroke-width="2.5" stroke-opacity="0.5"/>
+    <line x1="286" y1="79" x2="286" y2="306" stroke="#3a2410" stroke-width="2.5" stroke-opacity="0.5"/>
+    <line x1="306" y1="79" x2="306" y2="306" stroke="#3a2410" stroke-width="2.5" stroke-opacity="0.5"/>
+
+    <!-- Iron bands -->
+    <rect x="244" y="118" width="104" height="14" rx="2" fill="#3a3f47" stroke="#20242a" stroke-width="2"/>
+    <rect x="244" y="238" width="104" height="14" rx="2" fill="#3a3f47" stroke="#20242a" stroke-width="2"/>
+
+    <!-- Impact crack (big, from ram head) -->
+    <path d="M248 195 L278 185 L265 208 L298 200 L280 220 L318 212"
+          fill="none" stroke="#1c1109" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M252 172 L274 166 L264 152"
+          fill="none" stroke="#1c1109" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- ===== IMPACT BURST ===== -->
+  <g stroke="#fff8e1" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.9">
+    <line x1="232" y1="198" x2="208" y2="174"/>
+    <line x1="232" y1="204" x2="206" y2="204"/>
+    <line x1="232" y1="210" x2="210" y2="234"/>
+    <line x1="236" y1="186" x2="222" y2="164"/>
+  </g>
+
+  <!-- Wood splinters flying -->
+  <g fill="#c58c4f" stroke="#5e3a17" stroke-width="1.5">
+    <polygon points="228,188 242,182 238,194"/>
+    <polygon points="232,214 246,220 234,222"/>
+    <polygon points="224,202 210,198 222,208"/>
+  </g>
+
+  <!-- ===== BATTERING RAM ===== -->
+  <g>
+    <!-- Support A-frame -->
+    <line x1="118" y1="148" x2="148" y2="298" stroke="#4a2f16" stroke-width="11" stroke-linecap="round"/>
+    <line x1="118" y1="148" x2="88"  y2="298" stroke="#4a2f16" stroke-width="11" stroke-linecap="round"/>
+    <line x1="103" y1="222" x2="133" y2="222" stroke="#4a2f16" stroke-width="7" stroke-linecap="round"/>
+
+    <!-- Suspension ropes (diagonal) -->
+    <line x1="116" y1="150" x2="148" y2="194" stroke="#e8d6a0" stroke-width="3.5"/>
+    <line x1="120" y1="150" x2="178" y2="198" stroke="#e8d6a0" stroke-width="3.5"/>
+
+    <!-- Wooden log body -->
+    <rect x="118" y="190" width="112" height="36" rx="18" fill="url(#log)" stroke="#3a2410" stroke-width="5"/>
+
+    <!-- Wood grain on log -->
+    <line x1="138" y1="198" x2="212" y2="198" stroke="#5e3a17" stroke-width="1.5" stroke-opacity="0.5"/>
+    <line x1="138" y1="216" x2="212" y2="216" stroke="#5e3a17" stroke-width="1.5" stroke-opacity="0.5"/>
+
+    <!-- Iron ram head (pointed, with horns) -->
+    <path d="M224 186 h18 a14 14 0 0 1 14 14 v6 a14 14 0 0 1 -14 14 h-18 Z"
+          fill="url(#steel)" stroke="#2b333b" stroke-width="4"/>
+
+    <!-- Upper horn -->
+    <path d="M256 194 q16 -14 26 -6 q-14 2 -20 12 Z"
+          fill="url(#steel)" stroke="#2b333b" stroke-width="3"/>
+
+    <!-- Lower horn -->
+    <path d="M256 212 q16 14 26 6 q-14 -2 -20 -12 Z"
+          fill="url(#steel)" stroke="#2b333b" stroke-width="3"/>
+
+    <!-- Rivet on ram head -->
+    <circle cx="236" cy="207" r="3" fill="#2b333b"/>
+  </g>
+
+  <!-- ===== VIKING (left side, pushing) ===== -->
+  <g>
+    <!-- Legs -->
+    <path d="M68 302 l6 -34" stroke="#3f2a55" stroke-width="12" stroke-linecap="round"/>
+    <path d="M90 302 l0 -34" stroke="#3f2a55" stroke-width="12" stroke-linecap="round"/>
+
+    <!-- Boots -->
+    <ellipse cx="66" cy="304" rx="12" ry="6" fill="#2a1a0d"/>
+    <ellipse cx="94" cy="304" rx="12" ry="6" fill="#2a1a0d"/>
+
+    <!-- Tunic body -->
+    <path d="M58 266 q22 -18 44 0 l-4 -40 q-18 -12 -36 0 Z"
+          fill="url(#tunic)" stroke="#5e2114" stroke-width="4"/>
+
+    <!-- Arms reaching to ram log -->
+    <path d="M94 234 q28 -8 40 -18" fill="none" stroke="#e0a878" stroke-width="11" stroke-linecap="round"/>
+    <path d="M62 234 q24 -6 34 -14" fill="none" stroke="#e0a878" stroke-width="11" stroke-linecap="round"/>
+
+    <!-- Head -->
+    <circle cx="80" cy="202" r="20" fill="#f2c79b" stroke="#c49a6c" stroke-width="2"/>
+
+    <!-- Beard (flowing, golden) -->
+    <path d="M64 208 q16 30 32 0 q-4 16 -16 18 q-12 -2 -16 -18 Z"
+          fill="#d8a24a" stroke="#8a5c15" stroke-width="2"/>
+
+    <!-- Horned helmet -->
+    <!-- Helmet dome -->
+    <path d="M58 198 a22 20 0 0 1 44 0 Z"
+          fill="#8f9aa6" stroke="#3b444d" stroke-width="4"/>
+    <!-- Helmet band -->
+    <rect x="58" y="194" width="44" height="8" rx="1"
+          fill="#6c7885" stroke="#3b444d" stroke-width="2"/>
+
+    <!-- Left horn (curved) -->
+    <path d="M60 194 q-16 -6 -22 -22 q14 4 22 14 Z"
+          fill="#f4efe0" stroke="#3b444d" stroke-width="3"/>
+
+    <!-- Right horn (curved) -->
+    <path d="M100 194 q16 -6 22 -22 q-14 4 -22 14 Z"
+          fill="#f4efe0" stroke="#3b444d" stroke-width="3"/>
+
+    <!-- Eye (determined look) -->
+    <circle cx="88" cy="204" r="3" fill="#2b333b"/>
+  </g>
+
+  <!-- ===== WORDMARK ===== -->
+  <text x="200" y="356" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="42" font-weight="bold"
+        fill="#2f1c0b" stroke="#fff2cc" stroke-width="1">ramgate</text>
+</svg>
