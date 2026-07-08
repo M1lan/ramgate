@@ -1,0 +1,28 @@
+amends "package://github.com/jdx/hk/releases/download/v1.49.0/hk@1.49.0#/Config.pkl"
+
+// ramgate git hooks (hk). Focus: block secrets and PII before they land.
+// The heavy lifting lives in scripts/ci/scan.bash so hk and CI share one source.
+//
+// Activate:  hk install     (NOTE: this replaces the current prek git-hook
+//                            shims in .git/hooks -- see AGENTS notes before running)
+
+local scan = new Mapping<String, Step> {
+  ["secrets-pii"] {
+    // Scans the staged diff for secrets (gitleaks) and non-allowlisted emails.
+    check = "bash scripts/ci/scan.bash --staged"
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    steps = scan
+  }
+  // `hk check` runs the same scan across the whole tracked tree.
+  ["check"] {
+    steps = new Mapping<String, Step> {
+      ["secrets-pii"] {
+        check = "bash scripts/ci/scan.bash"
+      }
+    }
+  }
+}

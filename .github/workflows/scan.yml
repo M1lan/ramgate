@@ -1,0 +1,23 @@
+# ramgate CI -- very basic secret + PII scanning.
+# Secrets: official gitleaks action (scans history + tree).
+# PII:     shared scanner (scripts/ci/scan.bash), email allowlist check.
+name: scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  secrets-pii:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: PII scan (emails)
+        run: bash scripts/ci/scan.bash --pii-only
